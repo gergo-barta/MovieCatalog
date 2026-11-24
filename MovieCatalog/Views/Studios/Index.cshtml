@@ -1,0 +1,47 @@
+@model List<Studio>
+@{
+    ViewData["Title"] = "Studios";
+    var signedIn = User.Identity?.IsAuthenticated == true;
+}
+<div class="container cv-page">
+    <div class="cv-page-head">
+        <div>
+            <h1>Studios</h1>
+            <p class="text-muted mb-0">@Model.Count production companies</p>
+        </div>
+        @if (signedIn) { <a class="btn cv-btn" asp-action="Create">+ New studio</a> }
+    </div>
+
+    <div class="cv-table-wrap">
+        <table class="table cv-table align-middle mb-0">
+            <thead>
+                <tr><th>Studio</th><th>Country</th><th>Founded</th><th>Movies</th>@if (signedIn) { <th></th> }</tr>
+            </thead>
+            <tbody>
+                @foreach (var s in Model)
+                {
+                    <tr>
+                        <td class="fw-semibold">@s.Name</td>
+                        <td>@(s.Country ?? "–")</td>
+                        <td>@(s.FoundedYear?.ToString() ?? "–")</td>
+                        <td>
+                            @foreach (var m in s.Movies.OrderBy(m => m.ReleaseYear))
+                            {
+                                <a class="cv-chip sm" asp-controller="Movies" asp-action="Details" asp-route-id="@m.Id">@m.Title</a>
+                            }
+                        </td>
+                        @if (signedIn)
+                        {
+                            <td class="text-end text-nowrap">
+                                <a class="cv-icon-btn" title="Edit" asp-action="Edit" asp-route-id="@s.Id">✎</a>
+                                <form asp-action="Delete" asp-route-id="@s.Id" method="post" class="d-inline" data-confirm="Delete “@s.Name”? Its movies will be kept without a studio.">
+                                    <button class="cv-icon-btn danger" title="Delete" type="submit">✕</button>
+                                </form>
+                            </td>
+                        }
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

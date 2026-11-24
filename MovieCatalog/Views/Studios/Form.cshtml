@@ -1,0 +1,33 @@
+@model Studio
+@{
+    var isNew = Model.Id == 0;
+    ViewData["Title"] = isNew ? "New studio" : "Edit studio";
+}
+<div class="container cv-page cv-narrow sm">
+    <a class="cv-back" asp-action="Index">&larr; Studios</a>
+    <h1 class="mb-4">@ViewData["Title"]</h1>
+    <form asp-action="@(isNew ? "Create" : "Edit")" asp-route-id="@(isNew ? null : Model.Id)" method="post" class="cv-form">
+        <div class="mb-3">
+            <label asp-for="Name" class="form-label"></label>
+            <input asp-for="Name" class="form-control" autofocus />
+            <span asp-validation-for="Name" class="text-danger small"></span>
+        </div>
+        <div class="row g-3 mb-3">
+            <div class="col-7">
+                <label asp-for="Country" class="form-label"></label>
+                <input asp-for="Country" class="form-control" />
+                <span asp-validation-for="Country" class="text-danger small"></span>
+            </div>
+            <div class="col-5">
+                <label asp-for="FoundedYear" class="form-label"></label>
+                <input asp-for="FoundedYear" class="form-control" />
+                <span asp-validation-for="FoundedYear" class="text-danger small"></span>
+            </div>
+        </div>
+        <div class="d-flex gap-2 justify-content-end">
+            <a class="btn cv-btn-ghost" asp-action="Index">Cancel</a>
+            <button class="btn cv-btn" type="submit">@(isNew ? "Create" : "Save")</button>
+        </div>
+    </form>
+</div>
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

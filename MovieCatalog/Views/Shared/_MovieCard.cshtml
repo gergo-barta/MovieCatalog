@@ -1,0 +1,11 @@
+@model MovieCard
+<a class="cv-card" asp-controller="Movies" asp-action="Details" asp-route-id="@Model.Id">
+    <div class="cv-poster">
+        <partial name="_Poster" model="new PosterModel(Model.PosterPath, Model.Title, Model.Year)" />
+        <span class="cv-rating" data-rating-for="@Model.Id">@(Model.Average is null ? "–" : Model.Average.Value.ToString("0.0"))</span>
+    </div>
+    <div class="cv-card-body">
+        <div class="cv-card-title">@Model.Title</div>
+        <div class="cv-card-meta">@Model.Year · @Model.Genre · @(Model.Duration / 60)h @(Model.Duration % 60)m</div>
+    </div>
+</a>

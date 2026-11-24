@@ -1,0 +1,35 @@
+@model List<Genre>
+@{
+    ViewData["Title"] = "Genres";
+    var signedIn = User.Identity?.IsAuthenticated == true;
+}
+<div class="container cv-page">
+    <div class="cv-page-head">
+        <div>
+            <h1>Genres</h1>
+            <p class="text-muted mb-0">@Model.Count genres</p>
+        </div>
+        @if (signedIn) { <a class="btn cv-btn" asp-action="Create">+ New genre</a> }
+    </div>
+
+    <div class="cv-tiles">
+        @foreach (var g in Model)
+        {
+            <div class="cv-tile">
+                <a class="cv-tile-link" asp-controller="Movies" asp-action="Index" asp-route-genreId="@g.Id">
+                    <div class="cv-tile-name">@g.Name</div>
+                    <div class="cv-tile-meta">@g.Movies.Count movie@(g.Movies.Count == 1 ? "" : "s")</div>
+                </a>
+                @if (signedIn)
+                {
+                    <div class="cv-tile-actions">
+                        <a class="cv-icon-btn" title="Edit" asp-action="Edit" asp-route-id="@g.Id">✎</a>
+                        <form asp-action="Delete" asp-route-id="@g.Id" method="post" data-confirm="Delete the genre “@g.Name”?">
+                            <button class="cv-icon-btn danger" title="Delete" type="submit">✕</button>
+                        </form>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>

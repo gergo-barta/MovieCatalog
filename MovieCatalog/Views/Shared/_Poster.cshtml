@@ -1,0 +1,13 @@
+@model PosterModel
+@if (!string.IsNullOrEmpty(Model.Path))
+{
+    <img class="cv-poster-img" src="@Model.Path" alt="@Model.Title poster" loading="lazy" />
+}
+else
+{
+    // fallback when a movie has no poster: plain card with the title
+    <div class="cv-poster-fallback">
+        <span class="t">@Model.Title</span>
+        <span class="y">@Model.Year</span>
+    </div>
+}

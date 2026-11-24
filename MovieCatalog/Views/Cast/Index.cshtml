@@ -1,0 +1,50 @@
+@model List<MovieCast>
+@{
+    ViewData["Title"] = "Cast";
+    var signedIn = User.Identity?.IsAuthenticated == true;
+}
+<div class="container cv-page">
+    <div class="cv-page-head">
+        <div>
+            <h1>Cast &amp; crew</h1>
+            <p class="text-muted mb-0">Who played or directed what – @Model.Count credits</p>
+        </div>
+        @if (signedIn) { <a class="btn cv-btn" asp-action="Create" asp-route-movieId="@ViewBag.MovieId">+ Add credit</a> }
+    </div>
+
+    <form method="get" class="cv-filters">
+        <select name="movieId" asp-items="ViewBag.Movies" class="form-select" onchange="this.form.submit()">
+            <option value="">All movies</option>
+        </select>
+    </form>
+
+    <div class="cv-table-wrap">
+        <table class="table cv-table align-middle mb-0">
+            <thead>
+                <tr><th>Movie</th><th>Person</th><th>Role</th><th>Character</th><th class="text-center">#</th>@if (signedIn) { <th></th> }</tr>
+            </thead>
+            <tbody>
+                @foreach (var c in Model)
+                {
+                    <tr>
+                        <td><a asp-controller="Movies" asp-action="Details" asp-route-id="@c.MovieId">@c.Movie!.Title</a></td>
+                        <td><a asp-controller="People" asp-action="Details" asp-route-id="@c.PersonId">@c.Person!.FullName</a></td>
+                        <td><span class="cv-chip sm role-@c.Role.ToString().ToLower()">@c.Role</span></td>
+                        <td class="text-muted">@(c.CharacterName ?? "–")</td>
+                        <td class="text-center text-muted">@c.BillingOrder</td>
+                        @if (signedIn)
+                        {
+                            <td class="text-end text-nowrap">
+                                <a class="cv-icon-btn" title="Edit" asp-action="Edit" asp-route-id="@c.Id">✎</a>
+                                <form asp-action="Delete" asp-route-id="@c.Id" method="post" class="d-inline" data-confirm="Remove @c.Person!.FullName from @c.Movie!.Title?">
+                                    <button class="cv-icon-btn danger" title="Delete" type="submit">✕</button>
+                                </form>
+                            </td>
+                        }
+                    </tr>
+                }
+            </tbody>
+        </table>
+        @if (Model.Count == 0) { <div class="cv-empty">No credits yet.</div> }
+    </div>
+</div>

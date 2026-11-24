@@ -1,0 +1,62 @@
+@model List<Review>
+@inject UserManager<AppUser> UserManager
+@{
+    bool mine = ViewBag.Mine;
+    ViewData["Title"] = mine ? "My reviews" : "Reviews";
+    var myId = UserManager.GetUserId(User);
+}
+<div class="container cv-page cv-narrow">
+    <div class="cv-page-head">
+        <div>
+            <h1>@ViewData["Title"] <span class="cv-live">LIVE</span></h1>
+            <p class="text-muted mb-0">@Model.Count review@(Model.Count == 1 ? "" : "s")</p>
+        </div>
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+            <div class="cv-segmented">
+                <a class="@(mine ? "" : "active")" asp-action="Index">All</a>
+                <a class="@(mine ? "active" : "")" asp-action="Index" asp-route-mine="true">Mine</a>
+            </div>
+        }
+    </div>
+
+    <div class="cv-callout mb-4 d-none" id="new-reviews">
+        New reviews were posted. <a href="">Refresh</a>
+    </div>
+
+    <div class="d-grid gap-3">
+        @foreach (var r in Model)
+        {
+            <article class="cv-review @(r.UserId == myId ? "mine" : "")">
+                <div class="d-flex align-items-center gap-3">
+                    <a class="cv-thumb sm" asp-controller="Movies" asp-action="Details" asp-route-id="@r.MovieId">
+                        <partial name="_Poster" model="new PosterModel(r.Movie!.PosterPath, r.Movie.Title, r.Movie.ReleaseYear)" />
+                    </a>
+                    <div class="flex-grow-1">
+                        <a class="fw-semibold" asp-controller="Movies" asp-action="Details" asp-route-id="@r.MovieId">@r.Movie!.Title</a>
+                        <div class="small text-muted">by @r.User!.Name · @r.CreatedAt.ToLocalTime().ToString("MMM d, yyyy")@(r.UpdatedAt is null ? "" : " · edited")</div>
+                    </div>
+                    <div class="cv-score lg">@r.Rating<span>/10</span></div>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(r.Comment)) { <p class="mt-3 mb-0">@r.Comment</p> }
+                @if (r.UserId == myId)
+                {
+                    <div class="d-flex gap-2 mt-3">
+                        <a class="btn btn-sm cv-btn-ghost" asp-action="Edit" asp-route-id="@r.Id">Edit</a>
+                        <form asp-action="Delete" asp-route-id="@r.Id" asp-route-returnTo="list" method="post" data-confirm="Delete your review of @r.Movie!.Title?">
+                            <button class="btn btn-sm cv-btn-danger" type="submit">Delete</button>
+                        </form>
+                    </div>
+                }
+            </article>
+        }
+        @if (Model.Count == 0) { <div class="cv-empty">No reviews yet.</div> }
+    </div>
+</div>
+@section Scripts {
+    <script>
+        document.addEventListener("cv:reviewsChanged", e => {
+            if (e.detail.byUser !== cv.me) document.getElementById("new-reviews").classList.remove("d-none");
+        });
+    </script>
+}

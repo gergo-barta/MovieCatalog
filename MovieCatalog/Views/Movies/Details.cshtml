@@ -1,0 +1,140 @@
+@model MovieDetailsViewModel
+@{
+    var m = Model.Movie;
+    ViewData["Title"] = m.Title;
+    var signedIn = User.Identity?.IsAuthenticated == true;
+}
+
+<section class="cv-detail-hero">
+    <div class="container">
+        <div class="row g-4 g-lg-5 align-items-end">
+            <div class="col-md-4 col-lg-3">
+                <div class="cv-poster lg">
+                    <partial name="_Poster" model="new PosterModel(m.PosterPath, m.Title, m.ReleaseYear)" />
+                </div>
+            </div>
+            <div class="col-md-8 col-lg-9">
+                <div class="cv-chips mb-3">
+                    <a class="cv-chip" asp-action="Index" asp-route-genreId="@m.GenreId">@m.Genre!.Name</a>
+                    <span class="cv-chip">@m.ReleaseYear</span>
+                    <span class="cv-chip">@(m.DurationMinutes / 60)h @(m.DurationMinutes % 60)m</span>
+                    @if (m.Studio is not null) { <span class="cv-chip">@m.Studio.Name</span> }
+                </div>
+                <h1 class="cv-detail-title">@m.Title</h1>
+                @if (Model.Directors.Count > 0)
+                {
+                    <p class="cv-detail-sub">Directed by
+                        @for (var i = 0; i < Model.Directors.Count; i++)
+                        {
+                            var d = Model.Directors[i];
+                            <a asp-controller="People" asp-action="Details" asp-route-id="@d.PersonId">@d.Person!.FullName</a>@(i < Model.Directors.Count - 1 ? ", " : "")
+                        }
+                    </p>
+                }
+                <p class="cv-detail-desc">@m.Description</p>
+
+                <div class="d-flex flex-wrap align-items-center gap-3 mt-4">
+                    <div class="cv-big-rating" id="rating-summary">
+                        <span class="star">★</span>
+                        <span class="val" data-rating-for="@m.Id">@(Model.Average?.ToString("0.0") ?? "–")</span>
+                        <span class="of">/10</span>
+                        <span class="cnt" id="rating-count">@Model.ReviewCount review@(Model.ReviewCount == 1 ? "" : "s")</span>
+                    </div>
+                    @if (signedIn)
+                    {
+                        <a class="btn cv-btn-ghost" asp-action="Edit" asp-route-id="@m.Id">Edit</a>
+                        <form asp-action="Delete" asp-route-id="@m.Id" method="post" data-confirm="Delete “@m.Title” together with its cast and reviews?">
+                            <button class="btn cv-btn-danger" type="submit">Delete</button>
+                        </form>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="container cv-page pt-4">
+    <div class="row g-5">
+        <div class="col-lg-5">
+            <div class="cv-section-head">
+                <h2>Cast &amp; crew</h2>
+                @if (signedIn)
+                {
+                    <a asp-controller="Cast" asp-action="Create" asp-route-movieId="@m.Id">+ Add</a>
+                }
+            </div>
+            <div class="cv-list">
+                @foreach (var c in Model.Directors.Concat(Model.Actors))
+                {
+                    <div class="cv-list-item">
+                        <div class="flex-grow-1">
+                            <a class="fw-semibold" asp-controller="People" asp-action="Details" asp-route-id="@c.PersonId">@c.Person!.FullName</a>
+                            <div class="small text-muted">@(c.Role == CastRole.Actor ? c.CharacterName ?? "Actor" : c.Role.ToString())</div>
+                        </div>
+                        @if (signedIn)
+                        {
+                            <a class="cv-icon-btn" title="Edit" asp-controller="Cast" asp-action="Edit" asp-route-id="@c.Id" asp-route-returnTo="movie">✎</a>
+                            <form asp-controller="Cast" asp-action="Delete" asp-route-id="@c.Id" asp-route-returnTo="movie" method="post" data-confirm="Remove @c.Person!.FullName from this movie?">
+                                <button class="cv-icon-btn danger" title="Remove" type="submit">✕</button>
+                            </form>
+                        }
+                    </div>
+                }
+                @if (!Model.Directors.Any() && !Model.Actors.Any())
+                {
+                    <div class="cv-empty small">No cast added yet.</div>
+                }
+            </div>
+        </div>
+
+        <div class="col-lg-7" id="reviews">
+            <div class="cv-section-head">
+                <h2>Reviews <span class="cv-live">LIVE</span></h2>
+            </div>
+
+            @if (!signedIn)
+            {
+                <div class="cv-callout mb-4">
+                    <a asp-controller="Account" asp-action="Login" asp-route-returnUrl="@($"/Movies/Details/{m.Id}")">Log in</a> to write a review.
+                </div>
+            }
+            else if (Model.MyReview is null)
+            {
+                <form asp-controller="Reviews" asp-action="Create" method="post" class="cv-review-form mb-4">
+                    <input type="hidden" name="MovieId" value="@m.Id" />
+                    <label class="form-label">Your rating</label>
+                    <div class="cv-star-input" role="radiogroup">
+                        @for (var i = 10; i >= 1; i--)
+                        {
+                            <input type="radio" id="star@(i)" name="Rating" value="@i" checked="@(i == 8)" />
+                            <label for="star@(i)" title="@i/10">★</label>
+                        }
+                    </div>
+                    <textarea name="Comment" class="form-control mt-3" rows="3" maxlength="1000" placeholder="What did you think?"></textarea>
+                    <div class="text-end mt-3"><button class="btn cv-btn" type="submit">Post review</button></div>
+                </form>
+            }
+
+            <div id="reviews-block">
+                <partial name="_Reviews" model="Model" />
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // SignalR: when reviews of THIS movie change anywhere, reload the review list
+        const movieId = @m.Id;
+        document.addEventListener("cv:reviewsChanged", async e => {
+            const r = e.detail;
+            if (r.movieId !== movieId) return;
+            const res = await fetch(`/Movies/ReviewsPartial/${movieId}`);
+            if (!res.ok) return;
+            const block = document.getElementById("reviews-block");
+            block.innerHTML = await res.text();
+            block.classList.remove("cv-flash"); void block.offsetWidth; block.classList.add("cv-flash");
+            document.getElementById("rating-count").textContent = `${r.count} review${r.count === 1 ? "" : "s"}`;
+        });
+    </script>
+}

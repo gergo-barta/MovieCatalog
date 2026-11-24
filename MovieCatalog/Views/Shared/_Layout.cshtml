@@ -1,0 +1,102 @@
+﻿@inject UserManager<AppUser> UserManager
+@{
+    var me = User.Identity?.IsAuthenticated == true ? await UserManager.GetUserAsync(User) : null;
+    var controller = ViewContext.RouteData.Values["controller"]?.ToString();
+    string Active(string c) => string.Equals(controller, c, StringComparison.OrdinalIgnoreCase) ? "active" : "";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] · Movies</title>
+    <link rel="icon" href="~/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body data-user="@(me?.UserName ?? "")">
+    <nav class="navbar navbar-expand-lg navbar-dark cv-nav sticky-top">
+        <div class="container">
+            <a class="navbar-brand cv-brand" asp-controller="Home" asp-action="Index" title="Home" aria-label="Home">
+                <partial name="_Logo" />
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav" aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="mainNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item"><a class="nav-link @Active("Movies")" asp-controller="Movies" asp-action="Index">Movies</a></li>
+                    <li class="nav-item"><a class="nav-link @Active("People")" asp-controller="People" asp-action="Index">People</a></li>
+                    <li class="nav-item"><a class="nav-link @Active("Cast")" asp-controller="Cast" asp-action="Index">Cast</a></li>
+                    <li class="nav-item"><a class="nav-link @Active("Genres")" asp-controller="Genres" asp-action="Index">Genres</a></li>
+                    <li class="nav-item"><a class="nav-link @Active("Studios")" asp-controller="Studios" asp-action="Index">Studios</a></li>
+                    <li class="nav-item"><a class="nav-link @Active("Reviews")" asp-controller="Reviews" asp-action="Index">Reviews</a></li>
+                </ul>
+
+                <div class="cv-presence me-lg-3 my-2 my-lg-0" title="Live via SignalR">
+                    <span class="cv-dot" id="presence-dot"></span><span id="presence-text">connecting…</span>
+                </div>
+
+                @if (me is not null)
+                {
+                    <div class="dropdown">
+                        <button class="btn cv-user dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            @me.Name
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end cv-dropdown">
+                            <li class="dropdown-item-text small text-muted">@me.Email</li>
+                            <li><hr class="dropdown-divider" /></li>
+                            <li><a class="dropdown-item" asp-controller="Reviews" asp-action="Index" asp-route-mine="true">My reviews</a></li>
+                            <li><a class="dropdown-item" href="/swagger" target="_blank">API docs (Swagger)</a></li>
+                            <li><hr class="dropdown-divider" /></li>
+                            <li>
+                                <form asp-controller="Account" asp-action="Logout" method="post">
+                                    <button type="submit" class="dropdown-item">Log out</button>
+                                </form>
+                            </li>
+                        </ul>
+                    </div>
+                }
+                else
+                {
+                    <div class="d-flex gap-2">
+                        <a class="btn btn-sm cv-btn-ghost" asp-controller="Account" asp-action="Login">Log in</a>
+                        <a class="btn btn-sm cv-btn" asp-controller="Account" asp-action="Register">Sign up</a>
+                    </div>
+                }
+            </div>
+        </div>
+    </nav>
+
+    <main role="main" class="cv-main">
+        @RenderBody()
+    </main>
+
+    <!-- toast notifications -->
+    <div id="toasts" class="cv-toasts" aria-live="polite"></div>
+    @if (TempData["Toast"] is string toast) { <span hidden data-toast="@toast" data-type="success"></span> }
+    @if (TempData["ToastError"] is string toastErr) { <span hidden data-toast="@toastErr" data-type="error"></span> }
+
+    <!-- shared confirm dialog for delete buttons (forms with data-confirm) -->
+    <div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content cv-modal">
+                <div class="modal-body p-4">
+                    <h5 class="mb-2">Are you sure?</h5>
+                    <p class="text-muted mb-0" id="confirmText"></p>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn cv-btn-ghost" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="confirmOk">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/lib/signalr/signalr.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

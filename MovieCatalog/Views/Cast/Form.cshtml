@@ -1,0 +1,50 @@
+@model MovieCast
+@{
+    var isNew = Model.Id == 0;
+    ViewData["Title"] = isNew ? "Add credit" : "Edit credit";
+    var returnTo = Context.Request.Query["returnTo"].ToString();
+    if (string.IsNullOrEmpty(returnTo) && isNew && Model.MovieId > 0) returnTo = "movie";
+}
+<div class="container cv-page cv-narrow sm">
+    <a class="cv-back" href="@(returnTo == "movie" && Model.MovieId > 0 ? Url.Action("Details", "Movies", new { id = Model.MovieId }) : Url.Action("Index"))">&larr; Back</a>
+    <h1 class="mb-4">@ViewData["Title"]</h1>
+    <form asp-action="@(isNew ? "Create" : "Edit")" asp-route-id="@(isNew ? null : Model.Id)" method="post" class="cv-form">
+        <input type="hidden" name="returnTo" value="@returnTo" />
+        <div class="mb-3">
+            <label asp-for="MovieId" class="form-label"></label>
+            <select asp-for="MovieId" asp-items="ViewBag.Movies" class="form-select">
+                <option value="0">Choose a movie…</option>
+            </select>
+            <span asp-validation-for="MovieId" class="text-danger small"></span>
+        </div>
+        <div class="mb-3">
+            <label asp-for="PersonId" class="form-label"></label>
+            <select asp-for="PersonId" asp-items="ViewBag.People" class="form-select">
+                <option value="0">Choose a person…</option>
+            </select>
+            <span asp-validation-for="PersonId" class="text-danger small"></span>
+            <div class="form-text">Not in the list? <a asp-controller="People" asp-action="Create">Add a new person</a> first.</div>
+        </div>
+        <div class="row g-3 mb-3">
+            <div class="col-6">
+                <label asp-for="Role" class="form-label"></label>
+                <select asp-for="Role" asp-items="ViewBag.Roles" class="form-select"></select>
+            </div>
+            <div class="col-6">
+                <label asp-for="BillingOrder" class="form-label"></label>
+                <input asp-for="BillingOrder" class="form-control" />
+                <span asp-validation-for="BillingOrder" class="text-danger small"></span>
+            </div>
+        </div>
+        <div class="mb-3">
+            <label asp-for="CharacterName" class="form-label"></label>
+            <input asp-for="CharacterName" class="form-control" placeholder="Only for actors" />
+            <span asp-validation-for="CharacterName" class="text-danger small"></span>
+        </div>
+        <div class="d-flex gap-2 justify-content-end">
+            <a class="btn cv-btn-ghost" href="@(returnTo == "movie" && Model.MovieId > 0 ? Url.Action("Details", "Movies", new { id = Model.MovieId }) : Url.Action("Index"))">Cancel</a>
+            <button class="btn cv-btn" type="submit">@(isNew ? "Add" : "Save")</button>
+        </div>
+    </form>
+</div>
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

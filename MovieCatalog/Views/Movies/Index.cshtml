@@ -1,0 +1,41 @@
+@model MovieIndexViewModel
+@{
+    ViewData["Title"] = "Movies";
+}
+<div class="container cv-page">
+    <div class="cv-page-head">
+        <div>
+            <h1>Movies</h1>
+            <p class="text-muted mb-0">@Model.Movies.Count title@(Model.Movies.Count == 1 ? "" : "s") in the catalogue</p>
+        </div>
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+            <a class="btn cv-btn" asp-action="Create">+ Add movie</a>
+        }
+    </div>
+
+    <form method="get" class="cv-filters">
+        <input name="search" value="@Model.Search" class="form-control" placeholder="Search by title or person…" />
+        <select name="genreId" asp-items="Model.Genres" class="form-select" onchange="this.form.submit()">
+            <option value="">All genres</option>
+        </select>
+        <select name="sort" class="form-select" onchange="this.form.submit()">
+            <option value="rating" selected="@(Model.Sort == "rating")">Top rated</option>
+            <option value="newest" selected="@(Model.Sort == "newest")">Newest</option>
+            <option value="oldest" selected="@(Model.Sort == "oldest")">Oldest</option>
+            <option value="title" selected="@(Model.Sort == "title")">Title A–Z</option>
+        </select>
+        <button class="btn cv-btn-ghost" type="submit">Filter</button>
+    </form>
+
+    @if (Model.Movies.Count == 0)
+    {
+        <div class="cv-empty">No movies match your filters.</div>
+    }
+    else
+    {
+        <div class="cv-grid">
+            @foreach (var m in Model.Movies) { <partial name="_MovieCard" model="m" /> }
+        </div>
+    }
+</div>

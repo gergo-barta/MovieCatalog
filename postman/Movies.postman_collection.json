@@ -1,0 +1,171 @@
+{
+  "info": {
+    "name": "Movies API",
+    "description": "Movie catalogue REST API. Run **Auth > Login (Alice)** first - the token is saved automatically and used by every other request.\n\nStart the app (Rider > Run) so it listens on http://localhost:5000.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5000" },
+    { "key": "token", "value": "" },
+    { "key": "movieId", "value": "1" },
+    { "key": "genreId", "value": "" },
+    { "key": "studioId", "value": "" },
+    { "key": "personId", "value": "" },
+    { "key": "castId", "value": "" },
+    { "key": "reviewId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login (Alice)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('logged in', () => pm.response.to.have.status(200));",
+            "pm.collectionVariables.set('token', pm.response.json().accessToken);"
+          ] } }],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"alice@demo.com\",\n  \"password\": \"Demo123!\"\n}" }
+          }
+        },
+        {
+          "name": "Login (Bob)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('logged in', () => pm.response.to.have.status(200));",
+            "pm.collectionVariables.set('token', pm.response.json().accessToken);"
+          ] } }],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"bob@demo.com\",\n  \"password\": \"Demo123!\"\n}" }
+          }
+        },
+        {
+          "name": "Register new user",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('registered (400 = e-mail already taken)', () => pm.expect(pm.response.code).to.be.oneOf([200, 400]));"
+          ] } }],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/auth/register",
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"carol@demo.com\",\n  \"password\": \"Demo123!\"\n}" }
+          }
+        }
+      ],
+      "description": "Only two auth endpoints exist: login (returns the bearer token) and register. All other Identity endpoints (refresh, forgotPassword, 2FA, ...) are disabled and return 404."
+    },
+    {
+      "name": "Movies",
+      "item": [
+        { "name": "List movies", "request": { "auth": { "type": "noauth" }, "method": "GET", "url": "{{baseUrl}}/api/movies" } },
+        { "name": "Search movies", "request": { "auth": { "type": "noauth" }, "method": "GET", "url": { "raw": "{{baseUrl}}/api/movies?search=the&genreId=1", "host": ["{{baseUrl}}"], "path": ["api", "movies"], "query": [{ "key": "search", "value": "the" }, { "key": "genreId", "value": "1" }] } } },
+        { "name": "Get movie (with cast & reviews)", "request": { "auth": { "type": "noauth" }, "method": "GET", "url": "{{baseUrl}}/api/movies/{{movieId}}" } },
+        {
+          "name": "Create movie (shows live toast in browser)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('created', () => pm.response.to.have.status(201));",
+            "pm.collectionVariables.set('movieId', pm.response.json().id);"
+          ] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/movies",
+            "body": { "mode": "raw", "raw": "{\n  \"title\": \"Arrival\",\n  \"releaseYear\": 2016,\n  \"durationMinutes\": 116,\n  \"description\": \"A linguist is recruited to communicate with mysterious visitors.\",\n  \"genreId\": 1,\n  \"studioId\": 2\n}" }
+          }
+        },
+        {
+          "name": "Update movie",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/movies/{{movieId}}",
+            "body": { "mode": "raw", "raw": "{\n  \"title\": \"Arrival (updated)\",\n  \"releaseYear\": 2016,\n  \"durationMinutes\": 116,\n  \"description\": \"Updated from Postman.\",\n  \"genreId\": 1,\n  \"studioId\": 2\n}" }
+          }
+        },
+        { "name": "Delete movie", "request": { "method": "DELETE", "url": "{{baseUrl}}/api/movies/{{movieId}}" } }
+      ]
+    },
+    {
+      "name": "Genres",
+      "item": [
+        { "name": "List genres", "request": { "auth": { "type": "noauth" }, "method": "GET", "url": "{{baseUrl}}/api/genres" } },
+        {
+          "name": "Create genre",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.collectionVariables.set('genreId', pm.response.json().id);"] } }],
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/api/genres", "body": { "mode": "raw", "raw": "{\n  \"name\": \"Documentary\"\n}" } }
+        },
+        { "name": "Get genre", "request": { "auth": { "type": "noauth" }, "method": "GET", "url": "{{baseUrl}}/api/genres/{{genreId}}" } },
+        { "name": "Update genre", "request": { "method": "PUT", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/api/genres/{{genreId}}", "body": { "mode": "raw", "raw": "{\n  \"name\": \"Documentaries\"\n}" } } },
+        { "name": "Delete genre", "request": { "method": "DELETE", "url": "{{baseUrl}}/api/genres/{{genreId}}" } }
+      ]
+    },
+    {
+      "name": "Studios",
+      "item": [
+        { "name": "List studios", "request": { "auth": { "type": "noauth" }, "method": "GET", "url": "{{baseUrl}}/api/studios" } },
+        {
+          "name": "Create studio",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.collectionVariables.set('studioId', pm.response.json().id);"] } }],
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/api/studios", "body": { "mode": "raw", "raw": "{\n  \"name\": \"A24\",\n  \"country\": \"United States\",\n  \"foundedYear\": 2012\n}" } }
+        },
+        { "name": "Get studio", "request": { "auth": { "type": "noauth" }, "method": "GET", "url": "{{baseUrl}}/api/studios/{{studioId}}" } },
+        { "name": "Update studio", "request": { "method": "PUT", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/api/studios/{{studioId}}", "body": { "mode": "raw", "raw": "{\n  \"name\": \"A24 Films\",\n  \"country\": \"United States\",\n  \"foundedYear\": 2012\n}" } } },
+        { "name": "Delete studio", "request": { "method": "DELETE", "url": "{{baseUrl}}/api/studios/{{studioId}}" } }
+      ]
+    },
+    {
+      "name": "People",
+      "item": [
+        { "name": "List people", "request": { "auth": { "type": "noauth" }, "method": "GET", "url": "{{baseUrl}}/api/people" } },
+        {
+          "name": "Create person",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.collectionVariables.set('personId', pm.response.json().id);"] } }],
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/api/people", "body": { "mode": "raw", "raw": "{\n  \"firstName\": \"Amy\",\n  \"lastName\": \"Adams\",\n  \"birthDate\": \"1974-08-20\",\n  \"bio\": \"American actress.\"\n}" } }
+        },
+        { "name": "Get person", "request": { "auth": { "type": "noauth" }, "method": "GET", "url": "{{baseUrl}}/api/people/{{personId}}" } },
+        { "name": "Update person", "request": { "method": "PUT", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/api/people/{{personId}}", "body": { "mode": "raw", "raw": "{\n  \"firstName\": \"Amy\",\n  \"lastName\": \"Adams\",\n  \"birthDate\": \"1974-08-20\",\n  \"bio\": \"Updated from Postman.\"\n}" } } },
+        { "name": "Delete person", "request": { "method": "DELETE", "url": "{{baseUrl}}/api/people/{{personId}}" } }
+      ]
+    },
+    {
+      "name": "Cast",
+      "item": [
+        { "name": "Cast of a movie", "request": { "auth": { "type": "noauth" }, "method": "GET", "url": { "raw": "{{baseUrl}}/api/cast?movieId={{movieId}}", "host": ["{{baseUrl}}"], "path": ["api", "cast"], "query": [{ "key": "movieId", "value": "{{movieId}}" }] } } },
+        {
+          "name": "Add cast member",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.collectionVariables.set('castId', pm.response.json().id);"] } }],
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/api/cast", "body": { "mode": "raw", "raw": "{\n  \"movieId\": {{movieId}},\n  \"personId\": {{personId}},\n  \"role\": \"Actor\",\n  \"characterName\": \"Louise Banks\",\n  \"billingOrder\": 1\n}" } }
+        },
+        { "name": "Update cast member", "request": { "method": "PUT", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/api/cast/{{castId}}", "body": { "mode": "raw", "raw": "{\n  \"movieId\": {{movieId}},\n  \"personId\": {{personId}},\n  \"role\": \"Actor\",\n  \"characterName\": \"Dr. Louise Banks\",\n  \"billingOrder\": 1\n}" } } },
+        { "name": "Delete cast member", "request": { "method": "DELETE", "url": "{{baseUrl}}/api/cast/{{castId}}" } }
+      ]
+    },
+    {
+      "name": "Reviews",
+      "item": [
+        { "name": "Reviews of a movie", "request": { "auth": { "type": "noauth" }, "method": "GET", "url": { "raw": "{{baseUrl}}/api/reviews?movieId={{movieId}}", "host": ["{{baseUrl}}"], "path": ["api", "reviews"], "query": [{ "key": "movieId", "value": "{{movieId}}" }] } } },
+        { "name": "My reviews", "request": { "method": "GET", "url": "{{baseUrl}}/api/reviews/mine" } },
+        {
+          "name": "Post review (updates browser live)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["if (pm.response.code === 201) pm.collectionVariables.set('reviewId', pm.response.json().id);"] } }],
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/api/reviews", "body": { "mode": "raw", "raw": "{\n  \"movieId\": {{movieId}},\n  \"rating\": 9,\n  \"comment\": \"Posted from Postman!\"\n}" } }
+        },
+        { "name": "Update my review", "request": { "method": "PUT", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/api/reviews/{{reviewId}}", "body": { "mode": "raw", "raw": "{\n  \"rating\": 7,\n  \"comment\": \"Changed my mind a bit.\"\n}" } } },
+        { "name": "Edit someone else's review (403)", "request": { "method": "PUT", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/api/reviews/2", "body": { "mode": "raw", "raw": "{\n  \"rating\": 1,\n  \"comment\": \"Should be forbidden\"\n}" } } },
+        { "name": "Delete my review", "request": { "method": "DELETE", "url": "{{baseUrl}}/api/reviews/{{reviewId}}" } }
+      ]
+    }
+  ]
+}

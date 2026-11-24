@@ -1,0 +1,119 @@
+### Movies API - run these in Rider (click the green arrow next to a request).
+### Start the app first. Run "Login" first: the token is stored and used by the other requests.
+### Auth has only two endpoints: login and register. Other Identity endpoints (refresh, 2FA, ...) return 404.
+
+@baseUrl = http://localhost:5000
+
+### Login as Alice (saves the token)
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "alice@demo.com",
+  "password": "Demo123!"
+}
+
+> {% client.global.set("token", response.body.accessToken); %}
+
+### Login as Bob (saves the token - the requests below then run as Bob)
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "bob@demo.com",
+  "password": "Demo123!"
+}
+
+> {% client.global.set("token", response.body.accessToken); %}
+
+### Register a new user (400 if the e-mail is already taken)
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "carol@demo.com",
+  "password": "Demo123!"
+}
+
+### List movies (no login needed)
+GET {{baseUrl}}/api/movies
+
+### One movie with cast and reviews
+GET {{baseUrl}}/api/movies/1
+
+### Create a movie (a toast pops up in every open browser)
+POST {{baseUrl}}/api/movies
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "Arrival",
+  "releaseYear": 2016,
+  "durationMinutes": 116,
+  "description": "A linguist is recruited to communicate with mysterious visitors.",
+  "genreId": 1,
+  "studioId": 2
+}
+
+> {% client.global.set("movieId", response.body.id); %}
+
+### Update the movie
+PUT {{baseUrl}}/api/movies/{{movieId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "Arrival (updated)",
+  "releaseYear": 2016,
+  "durationMinutes": 116,
+  "description": "Updated from Rider.",
+  "genreId": 1,
+  "studioId": 2
+}
+
+### Post a review (the movie page updates live)
+POST {{baseUrl}}/api/reviews
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "movieId": {{movieId}},
+  "rating": 9,
+  "comment": "Posted from Rider's HTTP client!"
+}
+
+### My reviews
+GET {{baseUrl}}/api/reviews/mine
+Authorization: Bearer {{token}}
+
+### Genres
+GET {{baseUrl}}/api/genres
+
+### Studios
+GET {{baseUrl}}/api/studios
+
+### People
+GET {{baseUrl}}/api/people?search=nolan
+
+### Cast of movie 1
+GET {{baseUrl}}/api/cast?movieId=1
+
+### Edit someone else's review -> 403 (logged in as Alice; review 2 belongs to Bob)
+PUT {{baseUrl}}/api/reviews/2
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "rating": 1,
+  "comment": "Should be forbidden"
+}
+
+### Without a token -> 401
+POST {{baseUrl}}/api/genres
+Content-Type: application/json
+
+{ "name": "Western" }
+
+### Delete the movie created above
+DELETE {{baseUrl}}/api/movies/{{movieId}}
+Authorization: Bearer {{token}}

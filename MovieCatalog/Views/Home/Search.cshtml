@@ -1,0 +1,58 @@
+@model SearchViewModel
+@{
+    ViewData["Title"] = Model.Query.Length > 0 ? $"Search: {Model.Query}" : "Search";
+}
+
+<div class="container cv-home">
+    <form asp-controller="Home" asp-action="Search" method="get" class="cv-home-search">
+        <input name="q" value="@Model.Query" class="form-control" placeholder="Search movies or people…" aria-label="Search movies or people" />
+        <button class="btn cv-btn" type="submit">Search</button>
+    </form>
+
+    @if (Model.Query.Length == 0)
+    {
+        <div class="cv-empty">Type a movie title or a person's name.</div>
+    }
+    else if (Model.Movies.Count == 0 && Model.People.Count == 0)
+    {
+        <div class="cv-empty">Nothing found for “@Model.Query”.</div>
+    }
+    else
+    {
+        @if (Model.Movies.Count > 0)
+        {
+            <div class="cv-section-head"><h2>Movies <span class="text-muted fs-6">@Model.Movies.Count</span></h2></div>
+            <div class="cv-list">
+                @foreach (var m in Model.Movies)
+                {
+                    <a class="cv-list-item" asp-controller="Movies" asp-action="Details" asp-route-id="@m.Id">
+                        <div class="cv-thumb"><partial name="_Poster" model="new PosterModel(m.PosterPath, m.Title, m.Year)" /></div>
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold">@m.Title</div>
+                            <div class="small text-muted">@m.Year · @m.Genre</div>
+                        </div>
+                        <span class="cv-rating static" data-rating-for="@m.Id">@(m.Average is null ? "–" : m.Average.Value.ToString("0.0"))</span>
+                    </a>
+                }
+            </div>
+        }
+
+        @if (Model.People.Count > 0)
+        {
+            <div class="cv-section-head"><h2>People <span class="text-muted fs-6">@Model.People.Count</span></h2></div>
+            <div class="cv-list">
+                @foreach (var p in Model.People)
+                {
+                    var known = string.Join(", ", p.Credits.OrderBy(c => c.Movie!.ReleaseYear).Select(c => c.Movie!.Title).Distinct().Take(3));
+                    var roles = string.Join(", ", p.Credits.Select(c => c.Role).Distinct().OrderBy(r => r));
+                    <a class="cv-list-item" asp-controller="People" asp-action="Details" asp-route-id="@p.Id">
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold">@p.FullName</div>
+                            <div class="small text-muted">@roles@(known.Length > 0 ? $" · {known}" : "")</div>
+                        </div>
+                    </a>
+                }
+            </div>
+        }
+    }
+</div>

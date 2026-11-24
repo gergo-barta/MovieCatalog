@@ -1,0 +1,43 @@
+﻿@model HomeViewModel
+@{
+    ViewData["Title"] = "Home";
+}
+
+<div class="container cv-home">
+    <form asp-controller="Home" asp-action="Search" method="get" class="cv-home-search">
+        <input name="q" class="form-control" placeholder="Search movies or people…" aria-label="Search movies or people" autofocus />
+        <button class="btn cv-btn" type="submit">Search</button>
+    </form>
+
+    <div class="cv-section-head">
+        <h2>Top rated</h2>
+        <a asp-controller="Movies" asp-action="Index">All movies &rarr;</a>
+    </div>
+
+    @if (Model.TopRated.Count == 0)
+    {
+        <div class="cv-empty">No rated movies yet.</div>
+    }
+    else
+    {
+        <ol class="cv-ranking">
+            @foreach (var (m, i) in Model.TopRated.Select((m, i) => (m, i)))
+            {
+                <li>
+                    <a class="cv-list-item" asp-controller="Movies" asp-action="Details" asp-route-id="@m.Id">
+                        <span class="cv-rank">@(i + 1)</span>
+                        <div class="cv-thumb"><partial name="_Poster" model="new PosterModel(m.PosterPath, m.Title, m.Year)" /></div>
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold">@m.Title</div>
+                            <div class="small text-muted">@m.Year · @m.Genre · @(m.Duration / 60)h @(m.Duration % 60)m</div>
+                        </div>
+                        <div class="text-end">
+                            <span class="cv-rating static" data-rating-for="@m.Id">@m.Average!.Value.ToString("0.0")</span>
+                            <div class="small text-muted mt-1">@m.ReviewCount review@(m.ReviewCount == 1 ? "" : "s")</div>
+                        </div>
+                    </a>
+                </li>
+            }
+        </ol>
+    }
+</div>
